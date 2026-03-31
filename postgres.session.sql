@@ -123,27 +123,65 @@ order by  product_count desc;
 --1. Total revenue per product (unit_price × quantity from order_details)
 
 SELECT product_id, sum(unit_price * quantity) as total_revenue
-FROM order_details
-group by product_id
+    FROM order_details
+    group by product_id
 
 
 --2. Top 5 best-selling products by quantity sold
 
 select p.product_name,sum(od.quantity) as best_selling
-from products p
-join order_details od on p.product_id = od.product_id
-group by product_name
-order by best_selling desc limit 5;
+    from products p
+    join order_details od on p.product_id = od.product_id
+    group by product_name
+    order by best_selling desc limit 5;
 
 
 --3. Total orders handled by each employee
 
 select count(o.order_id) as total_orders, concat(e.first_name,' ', e.last_name) as employee_name
-from orders o
-join employees e
-on e.employee_id = o.employee_id
-group by employee_name
-order BY total_orders desc
+    from orders o
+    join employees e
+    on e.employee_id = o.employee_id
+    group by employee_name
+    order BY total_orders desc
 
 
 --4. Revenue generated per country, sorted highest to lowest
+
+select o.ship_country, sum(od.unit_price *od.quantity)as revenue
+    from orders o
+    join order_details od
+    on o.order_id = od.order_id
+    group by ship_country
+    order by revenue desc
+
+
+--5. Average order value per customer
+
+select  c.contact_name,
+avg(od.unit_price * od.quantity) as avg_order_value
+    from customers c 
+    join orders o 
+    on c.customer_id = o.customer_id
+    join order_details od 
+    on o.order_id = od.order_id
+    group by contact_name
+    order by avg_order_value desc
+
+
+--**HAVING problems — these are interview staples:**
+
+--6. Find customers who have placed *more than 3 orders*
+--7. Find product categories where average unit price is *above $20*
+--8. Find employees who have handled orders going to *more than 5 different countries*
+--9. Find suppliers who supply *more than 3 products*
+--10. List countries where total revenue exceeds *$50,000*
+
+ --6. Find customers who have placed *more than 3 orders*
+
+   SELECT customer_id, COUNT(*) AS total_orders
+   FROM orders
+   GROUP BY customer_id
+   HAVING COUNT(*) > 3;
+   
+--7. Find product categories where average unit price is *above $20*
