@@ -122,9 +122,11 @@ order by  product_count desc;
 
 --1. Total revenue per product (unit_price × quantity from order_details)
 
-SELECT product_id, sum(unit_price * quantity) as total_revenue
+SELECT product_id, round(sum(unit_price * quantity):: numeric, 2)as total_revenue
     FROM order_details
     group by product_id
+    ORDER BY total_revenue DESC
+
 
 
 --2. Top 5 best-selling products by quantity sold
@@ -177,11 +179,81 @@ avg(od.unit_price * od.quantity) as avg_order_value
 --9. Find suppliers who supply *more than 3 products*
 --10. List countries where total revenue exceeds *$50,000*
 
+
  --6. Find customers who have placed *more than 3 orders*
 
    SELECT customer_id, COUNT(*) AS total_orders
-   FROM orders
-   GROUP BY customer_id
-   HAVING COUNT(*) > 3;
+    FROM orders
+    GROUP BY customer_id
+    HAVING COUNT(*) > 3;
    
 --7. Find product categories where average unit price is *above $20*
+
+select c.category_name,
+ round(avg(p.unit_price)::numeric, 2) as avg_unit_price
+    from categories c
+    join products p
+    on c.category_id = p.category_id
+    group by c.category_name
+    having avg(p.unit_price) > 20
+    order by avg_unit_price desc
+
+
+--8. Find employees who have handled orders going to *more than 5 different countries*
+
+select concat(e.first_name, ' ', e.last_name) as employee_name,
+    count(distinct o.ship_country) as countries_handled
+    from employees e
+    join orders o
+    on e.employee_id = o.employee_id
+    group by employee_name
+    having count(distinct o.ship_country) > 5
+    order by countries_handled desc
+
+
+--9. Find suppliers who supply *more than 3 products*
+
+select s.contact_name, count(p.product_id) as total_products
+    from suppliers s
+    join products p
+    on s.supplier_id = p.supplier_id
+    group by s.contact_name
+    having count(p.product_id) > 3
+    order by total_products desc
+
+--10. List countries where total revenue exceeds *$50,000*
+
+select o.ship_country, round(sum(od.unit_price * od.quantity)::numeric, 2) as total_revenue
+    from orders o
+    join order_details od
+    on o.order_id = od.order_id
+    group by o.ship_country
+    having sum(od.unit_price * od.quantity) > 50000
+    order by total_revenue desc
+
+
+--## Phase 4 — CASE WHEN (Day 4 — Morning)
+--Goal: Conditional logic inside queries. Shows up in take-home assignments and dashboards.
+
+*Problems:*
+--1. Label each product as 'Low Stock', 'Medium Stock', or 'Well Stocked' based on units_in_stock
+   sql
+   SELECT
+       product_name,
+       units_in_stock,
+       CASE
+           WHEN units_in_stock < 10 THEN 'Low Stock'
+           WHEN units_in_stock BETWEEN 10 AND 50 THEN 'Medium Stock'
+           ELSE 'Well Stocked'
+       END AS stock_status
+   FROM products;
+   
+--2. Classify orders as 'Small' (< $500), 'Medium' ($500–$2000), or 'Large' (> $2000) by order total
+--3. Show each employee with a 'Senior' or 'Junior' label based on hire date (before/after 1994)
+--4. Count how many orders fall into each size category (Small / Medium / Large) — combine CASE WHEN with GROUP BY
+--5. List products with a 'High Price' label if unit price is above $50, otherwise 'Regular Price' (self added)
+
+
+
+--2. Classify orders as 'Small' (< $500), 'Medium' ($500–$2000), or 'Large' (> $2000) by order total
+
