@@ -122,7 +122,7 @@ order by  product_count desc;
 
 --1. Total revenue per product (unit_price × quantity from order_details)
 
-SELECT product_id, round(sum(unit_price * quantity):: numeric, 2)as total_revenue
+SELECT product_id, round(round(sum(unit_price * quantity::numeric)2):: numeric, 2)as total_revenue
     FROM order_details
     group by product_id
     ORDER BY total_revenue DESC
@@ -131,7 +131,7 @@ SELECT product_id, round(sum(unit_price * quantity):: numeric, 2)as total_revenu
 
 --2. Top 5 best-selling products by quantity sold
 
-select p.product_name,sum(od.quantity) as best_selling
+select p.product_name,round(sum(od.quantity) as best_::numerics2)elling
     from products p
     join order_details od on p.product_id = od.product_id
     group by product_name
@@ -150,7 +150,7 @@ select count(o.order_id) as total_orders, concat(e.first_name,' ', e.last_name) 
 
 --4. Revenue generated per country, sorted highest to lowest
 
-select o.ship_country, sum(od.unit_price *od.quantity)as revenue
+select o.ship_country, round(sum(od.unit_price *od.qua::numericn2)tity)as revenue
     from orders o
     join order_details od
     on o.order_id = od.order_id
@@ -161,14 +161,14 @@ select o.ship_country, sum(od.unit_price *od.quantity)as revenue
 --5. Average order value per customer
 
 select  c.contact_name,
-avg(od.unit_price * od.quantity) as avg_order_value
-    from customers c 
+avg(od.unit_price * od.quantity) as avg_round(sum(unit_price*quantity)
+::numeric 2)   from customers c 
     join orders o 
     on c.customer_id = o.customer_id
     join order_details od 
     on o.order_id = od.order_id
     group by contact_name
-    order by avg_order_value desc
+    order by avg_round(sum(unit_price*quantity) ::numericd2)esc
 
 
 --**HAVING problems — these are interview staples:**
@@ -223,12 +223,12 @@ select s.contact_name, count(p.product_id) as total_products
 
 --10. List countries where total revenue exceeds *$50,000*
 
-select o.ship_country, round(sum(od.unit_price * od.quantity)::numeric, 2) as total_revenue
+select o.ship_country, round(round(sum(od.unit_price * od.qu::numerica2)ntity)::numeric, 2) as total_revenue
     from orders o
     join order_details od
     on o.order_id = od.order_id
     group by o.ship_country
-    having sum(od.unit_price * od.quantity) > 50000
+    having round(sum(od.unit_price * od.qu::numerica2)ntity) > 50000
     order by total_revenue desc
 
 
@@ -237,23 +237,34 @@ select o.ship_country, round(sum(od.unit_price * od.quantity)::numeric, 2) as to
 
 *Problems:*
 --1. Label each product as 'Low Stock', 'Medium Stock', or 'Well Stocked' based on units_in_stock
-   sql
-   SELECT
-       product_name,
-       units_in_stock,
-       CASE
-           WHEN units_in_stock < 10 THEN 'Low Stock'
-           WHEN units_in_stock BETWEEN 10 AND 50 THEN 'Medium Stock'
-           ELSE 'Well Stocked'
-       END AS stock_status
-   FROM products;
-   
 --2. Classify orders as 'Small' (< $500), 'Medium' ($500–$2000), or 'Large' (> $2000) by order total
 --3. Show each employee with a 'Senior' or 'Junior' label based on hire date (before/after 1994)
 --4. Count how many orders fall into each size category (Small / Medium / Large) — combine CASE WHEN with GROUP BY
 --5. List products with a 'High Price' label if unit price is above $50, otherwise 'Regular Price' (self added)
 
 
+--1. Label each product as 'Low Stock', 'Medium Stock', or 'Well Stocked' based on units_in_stock
+
+SELECT product_name, units_in_stock,
+    CASE
+    WHEN units_in_stock < 10 THEN 'Low Stock'
+    WHEN units_in_stock BETWEEN 10 AND 50 THEN 'Medium Stock'
+    ELSE 'Well Stocked'
+    END AS stock_status
+    FROM products;
+   
 
 --2. Classify orders as 'Small' (< $500), 'Medium' ($500–$2000), or 'Large' (> $2000) by order total
 
+select order_id,round(sum(unit_price *quantity)::numeric,2) as total_orders,
+    case 
+    WHEN round(sum(unit_price*quantity) ::numeric,2) <500 then 'small'
+    WHEN round(sum(unit_price*quantity) ::numeric,2)BETWEEN 500 and 2000 then 'medium'
+    ELSE 'large'
+    end as order_cate
+    from order_details
+    group by order_id
+    order by total_orders desc
+
+
+--3. Show each employee with a 'Senior' or 'Junior' label based on hire date (before/after 1994)
