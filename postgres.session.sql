@@ -268,3 +268,41 @@ select order_id,round(sum(unit_price *quantity)::numeric,2) as total_orders,
 
 
 --3. Show each employee with a 'Senior' or 'Junior' label based on hire date (before/after 1994)
+
+select 
+    case
+    when hire_date < '1994-01-01' then 'Senior' 
+    else 'Junior' 
+    end as emp_level ,concat(first_name, ' ', last_name)as employee_name,hire_date
+    from employees
+    order by hire_date
+
+
+--4. Count how many orders fall into each size category (Small / Medium / Large) — combine CASE WHEN with GROUP BY
+
+select order_cate,count(*)
+from(
+    select order_id,round(sum(unit_price *quantity)::numeric,2) as total_orders,
+    case 
+    WHEN round(sum(unit_price*quantity) ::numeric,2) <500 then 'small'
+    WHEN round(sum(unit_price*quantity) ::numeric,2)BETWEEN 500 and 2000 then 'medium'
+    ELSE 'large'
+    end as order_cate
+    from order_details
+    group by order_id
+    order by total_orders desc)as cate_size
+    group by order_cate
+  
+
+--5. List products with a 'High Price' label if unit price is above $50, otherwise 'Regular Price' (self added)
+
+select p.product_name,od.unit_price,
+    case
+    when od.unit_price > 50 then 'High_Price' 
+    else 'regular_price' 
+    end as price_level 
+    FROM order_details od
+    join products p
+    on p.product_id = od.product_id
+    group by p.product_name,od.unit_price
+    order by od.unit_price DESC
