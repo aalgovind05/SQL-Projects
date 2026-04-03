@@ -336,6 +336,21 @@ select contact_name
 
 --3. Find the employee who handled the *most orders* (subquery in WHERE or FROM)
 
+SELECT concat(first_name, ' ', last_name) AS employee_name, total_orders
+    FROM (
+    SELECT employee_id, COUNT(*) AS total_orders
+    FROM orders
+    GROUP BY employee_id
+    ) AS order_counts
+    JOIN employees e ON order_counts.employee_id = e.employee_id
+    WHERE total_orders = (SELECT MAX(total_orders) FROM (
+    SELECT employee_id, COUNT(*) AS total_orders
+    FROM orders
+    GROUP BY employee_id
+) AS max_orders);
+
+'''simple way to do'''
+
 SELECT
 CONCAT(e.first_name, ' ', e.last_name) AS employee_name,
 COUNT(o.order_id) AS total_orders
@@ -347,4 +362,14 @@ COUNT(o.order_id) AS total_orders
 
 
 --4. List products from the *same category* as 'Chai' (correlated-style subquery)
+
+select product_name
+    from products
+    where category_id = (select category_id
+    from products 
+    where product_name = 'Chai')
+
+
+--5. Find orders whose total value is *above the average order value* across all orders
+--   (hint: subquery in FROM to pre-calculate order totals)
 
