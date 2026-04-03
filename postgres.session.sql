@@ -306,3 +306,45 @@ select p.product_name,od.unit_price,
     on p.product_id = od.product_id
     group by p.product_name,od.unit_price
     order by od.unit_price DESC
+
+## Phase 5 — Subqueries (Day 4 — Afternoon)
+--Goal: Queries inside queries. Tests whether you understand query layering — common in interviews.
+
+*Problems:*
+--1. Find products whose unit price is above the *average unit price* of all products
+--2. Find customers who have *never placed an order* (subquery in WHERE with NOT IN)
+--3. Find the employee who handled the *most orders* (subquery in WHERE or FROM)
+--4. List products from the *same category* as 'Chai' (correlated-style subquery)
+--5. Find orders whose total value is *above the average order value* across all orders
+--   (hint: subquery in FROM to pre-calculate order totals)
+
+
+--1. Find products whose unit price is above the *average unit price* of all products
+
+SELECT product_name, unit_price
+   FROM products
+   WHERE unit_price > (SELECT AVG(unit_price) FROM products);
+
+
+--2. Find customers who have *never placed an order* (subquery in WHERE with NOT IN)
+
+select contact_name
+    from customers
+    where customer_id not in (select customer_id from orders )
+
+
+
+--3. Find the employee who handled the *most orders* (subquery in WHERE or FROM)
+
+SELECT
+CONCAT(e.first_name, ' ', e.last_name) AS employee_name,
+COUNT(o.order_id) AS total_orders
+    FROM employees e
+    JOIN orders o ON e.employee_id = o.employee_id
+    GROUP BY e.employee_id, e.first_name, e.last_name
+    ORDER BY total_orders DESC
+    LIMIT 1;
+
+
+--4. List products from the *same category* as 'Chai' (correlated-style subquery)
+
