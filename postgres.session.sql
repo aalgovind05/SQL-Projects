@@ -371,5 +371,45 @@ select product_name
 
 
 --5. Find orders whose total value is *above the average order value* across all orders
---   (hint: subquery in FROM to pre-calculate order totals)
+-- USE CTE FOR THIS PROBLEM --
 
+WITH order_totals AS (
+    SELECT
+    order_id,
+    ROUND(SUM(unit_price * quantity)::numeric, 2) AS order_total
+    FROM order_details
+    GROUP BY order_id
+)
+SELECT
+    order_id,
+    order_total
+FROM order_totals
+WHERE order_total > (SELECT AVG(order_total) FROM order_totals)
+ORDER BY order_total DESC;
+
+
+## Phase 6 — CTEs (Day 5)
+Goal: Write readable, reusable query logic. CTEs are the standard in real analyst work.
+
+*Problems:*
+--1. Rewrite the "orders above average order value" query from Phase 5 using a CTE
+--2. Use a CTE to find the *top customer per country* (highest total spend per country)
+--3. Use a CTE to calculate *monthly revenue*, then find months where revenue exceeded the overall monthly average
+--4. Build a CTE that calculates each employee's total revenue, then filter for employees above the team average
+--5. Chained CTEs: first calculate product revenue, then rank products within each category (prep for Phase 7)
+   
+--1. Rewrite the "orders above average order value" query from Phase 5 using a CTE
+
+   WITH order_totals AS (
+       SELECT order_id, SUM(unit_price * quantity) AS total
+       FROM order_details
+       GROUP BY order_id
+   ),
+   avg_order AS (
+       SELECT AVG(total) AS avg_value FROM order_totals
+   )
+   SELECT ot.order_id, ot.total
+   FROM order_totals ot, avg_order
+   WHERE ot.total > avg_order.avg_value;
+   
+--2. Use a CTE to find the *top customer per country* (highest total spend per country)
