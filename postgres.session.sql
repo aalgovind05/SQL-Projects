@@ -410,6 +410,26 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
    )
    SELECT ot.order_id, ot.total
    FROM order_totals ot, avg_order
-   WHERE ot.total > avg_order.avg_value;
+   WHERE ot.total > avg_order.avg_value
+   order BY ot.total DESC;
    
 --2. Use a CTE to find the *top customer per country* (highest total spend per country)
+
+WITH customer_revenue AS (
+    SELECT c.country, c.contact_name, SUM(od.unit_price * od.quantity) AS total_spend
+    FROM customers c
+    JOIN orders o ON c.customer_id = o.customer_id
+    JOIN order_details od ON o.order_id = od.order_id
+    GROUP BY c.country, c.contact_name
+),
+top_customers AS (
+    SELECT country, MAX(total_spend) AS max_spend
+    FROM customer_revenue
+    GROUP BY country
+)
+SELECT cr.country, cr.contact_name, cr.total_spend
+FROM customer_revenue cr
+JOIN top_customers tc 
+ON cr.country = tc.country AND cr.total_spend = tc.max_spend;
+
+
