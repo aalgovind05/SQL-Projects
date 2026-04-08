@@ -412,24 +412,23 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
    FROM order_totals ot, avg_order
    WHERE ot.total > avg_order.avg_value
    order BY ot.total DESC;
-   
---2. Use a CTE to find the *top customer per country* (highest total spend per country)
 
-WITH customer_revenue AS (
-    SELECT c.country, c.contact_name, SUM(od.unit_price * od.quantity) AS total_spend
-    FROM customers c
-    JOIN orders o ON c.customer_id = o.customer_id
-    JOIN order_details od ON o.order_id = od.order_id
-    GROUP BY c.country, c.contact_name
+/*the rest of the problems will be solve after my exam*/
+
+--4. Build a CTE that calculates each employee's total revenue, then filter for employees above the team average
+
+with employee_revenue as (
+    select e.employee_id, concat(e.first_name, ' ', e.last_name) as employee_name,
+    round(sum(od.unit_price * od.quantity)::numeric, 2) as total_revenue
+    from employees e
+    join orders o on e.employee_id = o.employee_id
+    join order_details od on o.order_id = od.order_id
+    group by e.employee_id, employee_name
 ),
-top_customers AS (
-    SELECT country, MAX(total_spend) AS max_spend
-    FROM customer_revenue
-    GROUP BY country
-)
-SELECT cr.country, cr.contact_name, cr.total_spend
-FROM customer_revenue cr
-JOIN top_customers tc 
-ON cr.country = tc.country AND cr.total_spend = tc.max_spend;
-
-
+average_revenue as (
+    select round(avg(total_revenue)::numeric, 2) as avg_revenue
+    from employee_revenue
+)   
+select employee_name, total_revenue
+from employee_revenue, average_revenue
+where total_revenue > average_revenue.avg_revenue   
