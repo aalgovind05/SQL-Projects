@@ -401,7 +401,7 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
 --1. Rewrite the "orders above average order value" query from Phase 5 using a CTE
 
    WITH order_totals AS (
-       SELECT order_id, SUM(unit_price * quantity) AS total
+       SELECT order_id, ROUND(SUM(unit_price * quantity):: numeric,2 )AS total
        FROM order_details
        GROUP BY order_id
    ),
@@ -413,9 +413,8 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
    WHERE ot.total > avg_order.avg_value
    order BY ot.total DESC;
 
-/*the rest of the problems will be solve after my exam*/
 
---4. Build a CTE that calculates each employee's total revenue, then filter for employees above the team average
+--2. Use a CTE to find the *top customer per country* (highest total spend per country)
 
 with employee_revenue as (
     select e.employee_id, concat(e.first_name, ' ', e.last_name) as employee_name,
@@ -423,12 +422,16 @@ with employee_revenue as (
     from employees e
     join orders o on e.employee_id = o.employee_id
     join order_details od on o.order_id = od.order_id
-    group by e.employee_id, employee_name
+    group by c.customer_id, c.contact_name, c.country
 ),
-average_revenue as (
-    select round(avg(total_revenue)::numeric, 2) as avg_revenue
-    from employee_revenue
-)   
-select employee_name, total_revenue
-from employee_revenue, average_revenue
-where total_revenue > average_revenue.avg_revenue   
+ranked_customers as (
+    select customer_id, contact_name, country, total_spend,
+    row_number() over (partition by country order by total_spend desc) as rn
+    from customer_spend
+)
+select customer_id, contact_name, country, total_spend
+from ranked_customers
+where rn = 1
+
+
+
