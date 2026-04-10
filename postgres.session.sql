@@ -416,22 +416,34 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
 
 --2. Use a CTE to find the *top customer per country* (highest total spend per country)
 
-with employee_revenue as (
-    select e.employee_id, concat(e.first_name, ' ', e.last_name) as employee_name,
-    round(sum(od.unit_price * od.quantity)::numeric, 2) as total_revenue
-    from employees e
-    join orders o on e.employee_id = o.employee_id
-    join order_details od on o.order_id = od.order_id
-    group by c.customer_id, c.contact_name, c.country
+-- Step 1: Calculate total spend per customer
+WITH customer_spend AS (
+    SELECT 
+        c.customer_id,
+        c.contact_name,
+        c.country,
+        ROUND(SUM(od.unit_price * od.quantity)::numeric, 2) AS total_spend
+    FROM customers c
+    JOIN orders o ON c.customer_id = o.customer_id
+    JOIN order_details od ON o.order_id = od.order_id
+    GROUP BY c.customer_id, c.contact_name, c.country
 ),
-ranked_customers as (
-    select customer_id, contact_name, country, total_spend,
-    row_number() over (partition by country order by total_spend desc) as rn
-    from customer_spend
+
+-- Step 2: Rank customers within each country by spend
+ranked_customers AS (
+    SELECT 
+        customer_id,
+        contact_name,
+        country,
+        total_spend,
+        ROW_NUMBER() OVER (PARTITION BY country ORDER BY total_spend DESC) AS rn
+    FROM customer_spend
 )
-select customer_id, contact_name, country, total_spend
-from ranked_customers
-where rn = 1
+
+-- Step 3: Pick only the top customer per country
+SELECT customer_id, contact_name, country, total_spend
+FROM ranked_customers
+WHERE rn = 1;
 
 
-
+--3. Use a CTE to calculate *monthly revenue*, then find months where revenue exceeded the overall monthly average
