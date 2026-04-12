@@ -382,7 +382,7 @@ WITH order_totals AS (
 )
 SELECT
     order_id,
-    order_total
+    order_total 
 FROM order_totals
 WHERE order_total > (SELECT AVG(order_total) FROM order_totals)
 ORDER BY order_total DESC;
@@ -447,3 +447,23 @@ WHERE rn = 1;
 
 
 --3. Use a CTE to calculate *monthly revenue*, then find months where revenue exceeded the overall monthly average
+
+with monthly_revenue AS
+    (select 
+        extract (MONTH from o.order_date)as order_month,
+        ROUND(sum(od.unit_price*od.quantity):: numeric,2) as order_revenue_per_month
+    from orders o
+    join order_details od
+    on o.order_id = od.order_id
+    group by extract (MONTH from o.order_date)
+    ),
+    avg_monthly_revenue as
+        (select avg(order_revenue_per_month) as avg_revenue
+    from monthly_revenue)
+
+    select order_month, order_revenue_per_month,am.avg_revenue
+    from monthly_revenue mo
+    cross join avg_monthly_revenue am 
+    where order_revenue_per_month > avg_revenue
+
+
