@@ -398,6 +398,7 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
 --4. Build a CTE that calculates each employee's total revenue, then filter for employees above the team average
 --5. Chained CTEs: first calculate product revenue, then rank products within each category (prep for Phase 7)
    
+
 --1. Rewrite the "orders above average order value" query from Phase 5 using a CTE
 
    WITH order_totals AS (
@@ -416,7 +417,7 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
 
 --2. Use a CTE to find the *top customer per country* (highest total spend per country)
 
--- Step 1: Calculate total spend per customer
+--Step 1: Calculate total spend per customer
 WITH customer_spend AS (
     SELECT 
         c.customer_id,
@@ -429,7 +430,7 @@ WITH customer_spend AS (
     GROUP BY c.customer_id, c.contact_name, c.country
 ),
 
--- Step 2: Rank customers within each country by spend
+--Step 2: Rank customers within each country by spend
 ranked_customers AS (
     SELECT 
         customer_id,
@@ -467,3 +468,30 @@ with monthly_revenue AS
     where order_revenue_per_month > avg_revenue
 
 
+--4. Build a CTE that calculates each employee's total revenue, then filter for employees above the team average
+
+select distinct title from employees;
+
+--step 1 find employees revenue
+with employee_revenue as(
+    select 
+        concat(e.first_name,' ',e.last_name) as employee_name,
+        ROUND(sum(od.unit_price*od.quantity):: numeric,2) as emp_total_revenue
+    from order_details od
+    join orders o
+    on od.order_id = o.order_id
+    join employees e
+    on o.employee_id = e.employee_id
+    group by concat(e.first_name,' ',e.last_name)
+    ),
+
+       avg_team_revenue as
+        (select
+            avg(emp_total_revenue) as team_revenue
+        from employee_revenue)
+
+        select employee_name,
+         emp_total_revenue,team_revenue
+        from employee_revenue
+        cross join avg_team_revenue
+        where emp_total_revenue > team_revenue
