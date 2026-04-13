@@ -494,4 +494,70 @@ with employee_revenue as(
          emp_total_revenue,team_revenue
         from employee_revenue
         cross join avg_team_revenue
-        where emp_total_revenue > team_revenue
+        where emp_total_revenue > team_revenue;
+
+
+--5. Chained CTEs: first calculate product revenue, then rank products within each category (prep for Phase 7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Phase 7 — Window Functions (Day 6)
+--Goal: The #1 differentiator at the entry level. Take your time here.
+
+*Fixed version of the rank query:*
+sql
+-- Rank products by revenue within each category (FIXED)
+WITH product_revenue AS (
+    SELECT
+        p.product_name,
+        p.category_id,
+        SUM(od.unit_price * od.quantity) AS revenue
+    FROM order_details od
+    JOIN products p ON od.product_id = p.product_id
+    GROUP BY p.product_name, p.category_id
+)
+SELECT
+    product_name,
+    category_id,
+    revenue,
+    RANK() OVER (PARTITION BY category_id ORDER BY revenue DESC) AS rank_in_category
+FROM product_revenue;
+
+--(The original query was broken — you cant use SUM() inside OVER() without pre-aggregating first. Always use a CTE or subquery first, then apply the window function.)
+
+--*Problems:*
+1. Running total of revenue month by month
+   sql
+   -- Hint:
+   SUM(monthly_revenue) OVER (ORDER BY month ASC)
+   
+--2. Rank employees by total orders handled (RANK())
+--3. Find each customer's most recent order using ROW_NUMBER() partitioned by customer
+--4. Month-over-month revenue change using LAG()
+   sql
+   -- Hint:
+   LAG(monthly_revenue, 1) OVER (ORDER BY month)
+   
+--5. For each order, show what *percentile* it falls in by total value (NTILE(4) for quartiles)
+--6. Show each product's revenue AND the running total of revenue across all products ordered by revenue (no partition)
+
+---
