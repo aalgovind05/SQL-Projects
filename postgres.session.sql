@@ -389,7 +389,7 @@ ORDER BY order_total DESC;
 
 
 ## Phase 6 — CTEs (Day 5)
-Goal: Write readable, reusable query logic. CTEs are the standard in real analyst work.
+--Goal: Write readable, reusable query logic. CTEs are the standard in real analyst work.
 
 *Problems:*
 --1. Rewrite the "orders above average order value" query from Phase 5 using a CTE
@@ -500,56 +500,29 @@ with employee_revenue as(
 --5. Chained CTEs: first calculate product revenue, then rank products within each category (prep for Phase 7)
 
 
+with p_cte as (
+select p.product_id,p.product_name,p.category_id,
+round(SUM(od.unit_price * od.quantity ) :: numeric, 2 )as product_revenue
+ from products p
+left join order_details od 
+on p.product_id = od.product_id
+group by p.product_id
+)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+select *,
+DENSE_RANK() over ( partition by category_id order by  product_revenue DESC ) as RANK_NO
+from p_cte ;
 
 
 
 ## Phase 7 — Window Functions (Day 6)
 --Goal: The #1 differentiator at the entry level. Take your time here.
 
-*Fixed version of the rank query:*
-sql
--- Rank products by revenue within each category (FIXED)
-WITH product_revenue AS (
-    SELECT
-        p.product_name,
-        p.category_id,
-        SUM(od.unit_price * od.quantity) AS revenue
-    FROM order_details od
-    JOIN products p ON od.product_id = p.product_id
-    GROUP BY p.product_name, p.category_id
-)
-SELECT
-    product_name,
-    category_id,
-    revenue,
-    RANK() OVER (PARTITION BY category_id ORDER BY revenue DESC) AS rank_in_category
-FROM product_revenue;
-
---(The original query was broken — you cant use SUM() inside OVER() without pre-aggregating first. Always use a CTE or subquery first, then apply the window function.)
-
 --*Problems:*
-1. Running total of revenue month by month
+--1. Running total of revenue month by month
    sql
    -- Hint:
-   SUM(monthly_revenue) OVER (ORDER BY month ASC)
-   
+   SUM(monthly_revenue) OVER (ORDER BY month ASC)  
 --2. Rank employees by total orders handled (RANK())
 --3. Find each customer's most recent order using ROW_NUMBER() partitioned by customer
 --4. Month-over-month revenue change using LAG()
@@ -560,4 +533,6 @@ FROM product_revenue;
 --5. For each order, show what *percentile* it falls in by total value (NTILE(4) for quartiles)
 --6. Show each product's revenue AND the running total of revenue across all products ordered by revenue (no partition)
 
----
+
+--1. Running total of revenue month by month
+
