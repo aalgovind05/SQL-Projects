@@ -536,3 +536,21 @@ from p_cte ;
 
 --1. Running total of revenue month by month
 
+
+--2. Rank employees by total orders handled (RANK())
+
+with ashwin as (
+    select concat(e.last_name, ' ', e.first_name) as full_name,
+count(o.order_id) as order_handaled
+from employees e
+join orders o 
+on e.employee_id = o.employee_id
+group by e.last_name, e.first_name
+)
+
+select *,
+RANK() OVER( ORDER BY order_handaled DESC) as rnk
+from ashwin;
+
+
+--3. Find each customer's most recent order using ROW_NUMBER() partitioned by customer
