@@ -536,6 +536,20 @@ from p_cte ;
 
 --1. Running total of revenue month by month
 
+WITH revenue_cal AS(
+SELECT
+    extract (MONTH FROM o.order_date) AS revenue_month,
+    ROUND(SUM (od.unit_price * od.quantity) :: NUMERIC ,2)AS total_revenue
+FROM orders o
+JOIN order_details od
+ON o.order_id = od.order_id 
+GROUP BY extract (MONTH FROM o.order_date)
+)
+
+SELECT *,
+    SUM(total_revenue) OVER( ORDER BY revenue_month ASC)
+FROM revenue_cal
+
 
 --2. Rank employees by total orders handled (RANK())
 
