@@ -519,17 +519,11 @@ from p_cte ;
 --Goal: The #1 differentiator at the entry level. Take your time here.
 
 --*Problems:*
---1. Running total of revenue month by month
-   sql
-   -- Hint:
-   SUM(monthly_revenue) OVER (ORDER BY month ASC)  
+
+--1. Running total of revenue month by month 
 --2. Rank employees by total orders handled (RANK())
 --3. Find each customer's most recent order using ROW_NUMBER() partitioned by customer
 --4. Month-over-month revenue change using LAG()
-   sql
-   -- Hint:
-   LAG(monthly_revenue, 1) OVER (ORDER BY month)
-   
 --5. For each order, show what *percentile* it falls in by total value (NTILE(4) for quartiles)
 --6. Show each product's revenue AND the running total of revenue across all products ordered by revenue (no partition)
 
@@ -583,3 +577,23 @@ SELECT
 SELECT * 
 FROM cust
 WHERE rn = 1;
+
+
+--4. Month-over-month revenue change using LAG()
+
+WITH revenue_cal AS (
+SELECT
+    extract (MONTH FROM o.order_date) AS revenue_month,
+    ROUND(SUM (od.unit_price * od.quantity) :: NUMERIC ,2)AS total_revenue
+FROM orders o
+JOIN order_details od
+ON o.order_id = od.order_id 
+GROUP BY extract (MONTH FROM o.order_date)
+)
+
+SELECT *,
+    LAG(total_revenue) OVER ( ORDER BY revenue_month) AS pre_revenue
+FROM revenue_cal
+
+
+
