@@ -592,8 +592,31 @@ GROUP BY extract (MONTH FROM o.order_date)
 )
 
 SELECT *,
-    LAG(total_revenue) OVER ( ORDER BY revenue_month) AS pre_revenue
+    LAG(total_revenue) OVER ( ORDER BY revenue_month) AS pre_revenue,
+    ROUND(total_revenue - LAG(total_revenue) OVER(ORDER BY revenue_month)::NUMERIC,2) AS revenue_change
 FROM revenue_cal
 
 
+
+--5
+
+
+
+
+--6. Show each product's revenue AND the running total of revenue across all products ordered by revenue (no partition)
+
+WITH product_cal AS(
+SELECT 
+    p.product_name,
+    ROUND(SUM(od.unit_price * od.quantity):: NUMERIC,2)AS product_revenue
+FROM products p
+JOIN order_details od
+ON p.product_id = od.product_id
+GROUP BY p.product_name
+
+)
+
+SELECT * ,
+    SUM(product_revenue) OVER(ORDER BY product_revenue) AS runnig_total
+FROM product_cal
 
