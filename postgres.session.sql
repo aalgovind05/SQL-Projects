@@ -568,3 +568,18 @@ from ashwin;
 
 
 --3. Find each customer's most recent order using ROW_NUMBER() partitioned by customer
+
+WITH cust AS (
+
+SELECT 
+    c.customer_id,
+    c.contact_name,
+    o.order_date,
+    ROW_NUMBER() OVER (PARTITION BY c.contact_name ORDER BY o.order_date DESC) as rn
+    FROM customers c
+    JOIN orders o
+    on c.customer_id = o.customer_id
+)
+SELECT * 
+FROM cust
+WHERE rn = 1;
