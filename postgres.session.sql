@@ -413,22 +413,12 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
    WHERE ot.total > avg_order.avg_value
    order BY ot.total DESC;
 
-/*the rest of the problems will be solve after my exam*/
 
---4. Build a CTE that calculates each employee's total revenue, then filter for employees above the team average
+  --2. Use a CTE to find the *top customer per country* (highest total spend per country)
 
-with employee_revenue as (
-    select e.employee_id, concat(e.first_name, ' ', e.last_name) as employee_name,
-    round(sum(od.unit_price * od.quantity)::numeric, 2) as total_revenue
-    from employees e
-    join orders o on e.employee_id = o.employee_id
-    join order_details od on o.order_id = od.order_id
-    group by e.employee_id, employee_name
-),
-average_revenue as (
-    select round(avg(total_revenue)::numeric, 2) as avg_revenue
-    from employee_revenue
-)   
-select employee_name, total_revenue
-from employee_revenue, average_revenue
-where total_revenue > average_revenue.avg_revenue   
+  with top_contrys as (select * from customers;
+  )
+
+
+
+  --5. Chained CTEs: first calculate product revenue, then rank products within each category (prep for Phase 7)
