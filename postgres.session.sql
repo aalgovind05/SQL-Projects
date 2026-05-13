@@ -420,5 +420,135 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
   )
 
 
+--3. Use a CTE to calculate *monthly revenue*, then find months where revenue exceeded the overall monthly average
 
-  --5. Chained CTEs: first calculate product revenue, then rank products within each category (prep for Phase 7)
+with monthly_revenue AS
+    (select 
+        extract (MONTH from o.order_date)as order_month,
+        ROUND(sum(od.unit_price*od.quantity):: numeric,2) as order_revenue_per_month
+    from orders o
+    join order_details od
+    on o.order_id = od.order_id
+    group by extract (MONTH from o.order_date)
+    ),
+    avg_monthly_revenue as
+        (select avg(order_revenue_per_month) as avg_revenue
+    from monthly_revenue)
+
+    select order_month, order_revenue_per_month,am.avg_revenue
+    from monthly_revenue mo
+    cross join avg_monthly_revenue am 
+    where order_revenue_per_month > avg_revenue
+
+
+--4. Build a CTE that calculates each employee's total revenue, then filter for employees above the team average
+
+select distinct title from employees;
+
+--step 1 find employees revenue
+with employee_revenue as(
+    select 
+        concat(e.first_name,' ',e.last_name) as employee_name,
+        ROUND(sum(od.unit_price*od.quantity):: numeric,2) as emp_total_revenue
+    from order_details od
+    join orders o
+    on od.order_id = o.order_id
+    join employees e
+    on o.employee_id = e.employee_id
+    group by concat(e.first_name,' ',e.last_name)
+    ),
+
+       avg_team_revenue as
+        (select
+            avg(emp_total_revenue) as team_revenue
+        from employee_revenue)
+
+        select employee_name,
+         emp_total_revenue,team_revenue
+        from employee_revenue
+        cross join avg_team_revenue
+        where emp_total_revenue > team_revenue;
+
+
+--5. Chained CTEs: first calculate product revenue, then rank products within each category (prep for Phase 7)
+
+
+with p_cte as (
+select p.product_id,p.product_name,p.category_id,
+round(SUM(od.unit_price * od.quantity ) :: numeric, 2 )as product_revenue
+ from products p
+left join order_details od 
+on p.product_id = od.product_id
+group by p.product_id
+)
+
+select *,
+DENSE_RANK() over ( partition by category_id order by  product_revenue DESC ) as RANK_NO
+from p_cte ;
+
+
+
+## Phase 7 — Window Functions (Day 6)
+--Goal: The #1 differentiator at the entry level. Take your time here.
+
+--*Problems:*
+
+--1. Running total of revenue month by month 
+--2. Rank employees by total orders handled (RANK())
+--3. Find each customer's most recent order using ROW_NUMBER() partitioned by customer
+--4. Month-over-month revenue change using LAG()
+--5. For each order, show what *percentile* it falls in by total value (NTILE(4) for quartiles)
+--6. Show each product's revenue AND the running total of revenue across all products ordered by revenue (no partition)
+
+
+--1. Running total of revenue month by month
+
+WITH revenue_cal AS(
+SELECT
+    extract (MONTH FROM o.order_date) AS revenue_month,
+    ROUND(SUM (od.unit_price * od.quantity) :: NUMERIC ,2)AS total_revenue
+FROM orders o
+JOIN order_details od
+ON o.order_id = od.order_id 
+GROUP BY extract (MONTH FROM o.order_date)
+)
+
+SELECT *,
+    SUM(total_revenue) OVER( ORDER BY revenue_month ASC)
+FROM revenue_cal
+
+
+--2. Rank employees by total orders handled (RANK())
+
+with ashwin as (
+    select concat(e.last_name, ' ', e.first_name) as full_name,
+count(o.order_id) as order_handaled
+from employees e
+join orders o 
+on e.employee_id = o.employee_id
+group by e.last_name, e.first_name
+)
+
+select *,
+RANK() OVER( ORDER BY order_handaled DESC) as rnk
+from ashwin;
+
+
+--3. Find each customer's most recent order using ROW_NUMBER() partitioned by customer
+
+WITH cust AS (
+
+SELECT 
+    c.customer_id,
+    c.contact_name,
+    o.order_date,
+    ROW_NUMBER() OVER (PARTITION BY c.contact_name ORDER BY o.order_date DESC) as rn
+    FROM customers c
+    JOIN orders o
+    on c.customer_id = o.customer_id
+)
+SELECT * 
+FROM cust
+WHERE rn = 1;
+
+
