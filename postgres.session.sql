@@ -382,14 +382,14 @@ WITH order_totals AS (
 )
 SELECT
     order_id,
-    order_total
+    order_total 
 FROM order_totals
 WHERE order_total > (SELECT AVG(order_total) FROM order_totals)
 ORDER BY order_total DESC;
 
 
 ## Phase 6 — CTEs (Day 5)
-Goal: Write readable, reusable query logic. CTEs are the standard in real analyst work.
+--Goal: Write readable, reusable query logic. CTEs are the standard in real analyst work.
 
 *Problems:*
 --1. Rewrite the "orders above average order value" query from Phase 5 using a CTE
@@ -398,10 +398,11 @@ Goal: Write readable, reusable query logic. CTEs are the standard in real analys
 --4. Build a CTE that calculates each employee's total revenue, then filter for employees above the team average
 --5. Chained CTEs: first calculate product revenue, then rank products within each category (prep for Phase 7)
    
+
 --1. Rewrite the "orders above average order value" query from Phase 5 using a CTE
 
    WITH order_totals AS (
-       SELECT order_id, SUM(unit_price * quantity) AS total
+       SELECT order_id, ROUND(SUM(unit_price * quantity):: numeric,2 )AS total
        FROM order_details
        GROUP BY order_id
    ),
