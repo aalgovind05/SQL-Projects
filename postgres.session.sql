@@ -417,8 +417,35 @@ ORDER BY order_total DESC;
 
   --2. Use a CTE to find the *top customer per country* (highest total spend per country)
 
-  with top_contrys as (select * from customers;
-  )
+
+--Step 1: Calculate total spend per customer
+WITH customer_spend AS (
+    SELECT 
+        c.customer_id,
+        c.contact_name,
+        c.country,
+        ROUND(SUM(od.unit_price * od.quantity)::numeric, 2) AS total_spend
+    FROM customers c
+    JOIN orders o ON c.customer_id = o.customer_id
+    JOIN order_details od ON o.order_id = od.order_id
+    GROUP BY c.customer_id, c.contact_name, c.country
+),
+
+--Step 2: Rank customers within each country by spend
+ranked_customers AS (
+    SELECT 
+        customer_id,
+        contact_name,
+        country,
+        total_spend,
+        ROW_NUMBER() OVER (PARTITION BY country ORDER BY total_spend DESC) AS rn
+    FROM customer_spend
+)
+
+-- Step 3: Pick only the top customer per country
+SELECT customer_id, contact_name, country, total_spend
+FROM ranked_customers
+WHERE rn = 1;
 
 
 --3. Use a CTE to calculate *monthly revenue*, then find months where revenue exceeded the overall monthly average
@@ -551,5 +578,48 @@ SELECT
 SELECT * 
 FROM cust
 WHERE rn = 1;
+
+
+
+--4. Month-over-month revenue change using LAG()
+
+WITH revenue_cal AS (
+SELECT
+    extract (MONTH FROM o.order_date) AS revenue_month,
+    ROUND(SUM (od.unit_price * od.quantity) :: NUMERIC ,2)AS total_revenue
+FROM orders o
+JOIN order_details od
+ON o.order_id = od.order_id 
+GROUP BY extract (MONTH FROM o.order_date)
+)
+
+SELECT *,
+    LAG(total_revenue) OVER ( ORDER BY revenue_month) AS pre_revenue,
+    ROUND(total_revenue - LAG(total_revenue) OVER(ORDER BY revenue_month)::NUMERIC,2) AS revenue_change
+FROM revenue_cal
+
+
+
+--5
+
+
+
+
+--6. Show each product's revenue AND the running total of revenue across all products ordered by revenue (no partition)
+
+WITH product_cal AS(
+SELECT 
+    p.product_name,
+    ROUND(SUM(od.unit_price * od.quantity):: NUMERIC,2)AS product_revenue
+FROM products p
+JOIN order_details od
+ON p.product_id = od.product_id
+GROUP BY p.product_name
+
+)
+
+SELECT * ,
+    SUM(product_revenue) OVER(ORDER BY product_revenue) AS runnig_total
+FROM product_cal
 
 
