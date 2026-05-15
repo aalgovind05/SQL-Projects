@@ -623,3 +623,29 @@ SELECT * ,
 FROM product_cal
 
 
+
+
+
+--self made questions
+
+SELECT
+  e.first_name,
+  e.last_name,
+  COUNT(o.order_id) As num_orders,
+  (
+    CASE
+      WHEN o.shipped_date <= o.required_date THEN 'On Time'
+      WHEN o.shipped_date > o.required_date THEN 'Late'
+      WHEN o.shipped_date is null THEN 'Not Shipped'
+    END
+  ) AS shipped
+FROM orders o
+  JOIN employees e ON e.employee_id = o.employee_id
+GROUP BY
+  e.first_name,
+  e.last_name,
+  shipped
+ORDER BY
+  e.last_name,
+  e.first_name,
+  num_orders DESC
