@@ -653,3 +653,4 @@ ORDER BY
 --self made questions
 
 select * from employees
+where city = 'London'
