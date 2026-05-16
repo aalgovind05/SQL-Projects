@@ -652,5 +652,6 @@ ORDER BY
 
 --self made questions
 
-select * from employees
-where city = 'London'
+
+select * from orders
+where ship_city = 'London'
