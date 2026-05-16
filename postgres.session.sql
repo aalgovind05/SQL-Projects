@@ -652,11 +652,4 @@ ORDER BY
 
 --self made questions
 
-Select 
-YEAR(o.order_date) AS order_year, 
-ROUND(SUM(p.unit_price * od.quantity * od.discount):: NUMERIC,2) AS discount_amount
-from orders o 
-JOIN order_details od ON o.order_id = od.order_id
-JOIN products p ON od.product_id = p.product_id
-group by YEAR(o.order_date)
-order by order_year desc;
+select * from employees
